@@ -6,8 +6,7 @@ Artrade backend services
 
 Frameworks and tools used in the project:
 
-- serverless framework
-- nodejs/yarn
+- yarn
 
 ## Setup developer environment - local machine
 
