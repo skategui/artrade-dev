@@ -1,0 +1,11 @@
+{
+  "apps": [
+    {
+      "app_id": "app_103a6987-82ab-4d64-b003-2df775b200de",
+      "org_id": "orga_b13a3eb2-8082-454b-9f6a-e902c5ddba32",
+      "deploy_url": "https://push-n2-par-clevercloud-customers.services.clever-cloud.com/app_103a6987-82ab-4d64-b003-2df775b200de.git",
+      "name": "artrade-dev",
+      "alias": "artrade-dev"
+    }
+  ]
+}

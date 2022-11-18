@@ -1,0 +1,20 @@
+image: 
+  name: clevercloud/clever-tools:latest
+  entrypoint: ["/bin/sh", "-c"]
+
+variables:
+  CLEVER_KIND_APPLICATION: "node" # change the value if needed
+
+
+production:deploy:to:clever-cloud:
+  only:
+    - feat/infra_cc    
+  environment:
+    name: production-clever-cloud/${CI_PROJECT_NAME}
+    url:  https://${CI_PROJECT_NAME}.cleverapps.io
+  script: |
+    CREATE_CC_APP=false
+    clever link -o ${ORGANIZATION_ID} ${CI_PROJECT_NAME} || CREATE_CC_APP=true
+    if ${CREATE_CC_APP}; then clever create --type ${CLEVER_KIND_APPLICATION} -o ${ORGANIZATION_ID} ${CI_PROJECT_NAME}; sleep 10; fi
+    clever domain add ${CI_PROJECT_NAME}.cleverapps.io || true
+    clever deploy -f

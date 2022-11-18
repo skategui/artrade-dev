@@ -1,0 +1,4 @@
+**/node_modules
+**/.serverless
+users/libs/image-resizer.ts
+users/__tests__/libs/image-resizer.test.ts
