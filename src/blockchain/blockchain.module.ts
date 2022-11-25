@@ -1,11 +1,11 @@
 import { forwardRef, Module } from '@nestjs/common';
-import { CollectionModule } from '../collections/collection.module';
-import { NFTModule } from '../nft/nft.module';
+import { NftCollectionModule } from '../collections/nft-collection.module';
+import { NftModule } from '../nft/nft.module';
 import { FileStorageModule } from '../storage/file-storage.module';
 import { BlockchainService } from './blockchain.service';
 
 @Module({
-  imports: [forwardRef(() => NFTModule), forwardRef(() => CollectionModule), FileStorageModule],
+  imports: [forwardRef(() => NftModule), forwardRef(() => NftCollectionModule), FileStorageModule],
   providers: [BlockchainService],
   exports: [BlockchainService],
 })

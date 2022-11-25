@@ -13,8 +13,8 @@ export type Protocol = typeof PROTOCOLS[number];
 
 export const baseConfigZod = {
   nodeEnv: ['NODE_ENV', z.nativeEnum(Env).default(Env.development)],
-  port: ['PORT', stringifiedIntegerZod(8080)],
-  graphqlPlaygroundEnabled: ['GRAPHQL_PLAYGROUND_ENABLED', stringifiedOptionalBooleanZod()], // FIXME Default
+  port: ['PORT', stringifiedIntegerZod(3000)],
+  graphqlPlaygroundEnabled: ['GRAPHQL_PLAYGROUND_ENABLED', stringifiedOptionalBooleanZod()],
   protocol: ['PROTOCOL', z.enum(PROTOCOLS).default('http')],
   host: ['HOST', z.string().default('localhost')],
   throttleTtl: ['THROTTLE_TTL', stringifiedIntegerZod(10)],
@@ -22,4 +22,5 @@ export const baseConfigZod = {
   fileUploadMaxFiles: ['FILE_UPLOAD_MAX_FILES', stringifiedIntegerZod(10)],
   artradeBaseUrl: ['ARTRADE_FRONTEND_URL', z.string()],
   artradeApiBaseUrl: ['ARTRADE_API_BASE_URL', z.string()],
+  devToken: ['DEV_TOKEN', z.string().min(1).optional()],
 } as const;

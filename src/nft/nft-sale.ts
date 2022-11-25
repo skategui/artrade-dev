@@ -1,9 +1,12 @@
-import { Field, Int, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql';
+import { Field, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { Long } from 'mongodb';
 import { Schema as MongooseSchema } from 'mongoose';
 import { z } from 'zod';
+import { GraphQlLamportScalar } from '../graphql/scalars/lamport.scalar';
 import { defaultSubDocWithDiscriminatorSchemaOption } from '../helpers/default-schema-option.tools';
 import { Bid } from './bid.model';
+import { LamportAmount } from './nft.model';
 import { Offer } from './offer.model';
 
 export enum NftSaleKind {
@@ -60,13 +63,13 @@ export class NftAuctionSale extends BaseNftSale {
   @Field(() => Date)
   endDate: Date;
 
-  @Prop({ required: true })
-  @Field(() => Int)
-  startingPriceInSol: number;
+  @Prop({ required: true, type: Long })
+  @Field(() => GraphQlLamportScalar)
+  startingPrice: LamportAmount;
 
-  @Prop()
-  @Field(() => Int, { nullable: true })
-  highestBid?: number;
+  @Prop({ type: Long })
+  @Field(() => GraphQlLamportScalar, { nullable: true })
+  highestBid?: LamportAmount;
 
   @Prop([{ type: Bid, default: [] }])
   @Field(() => [Bid])
@@ -82,9 +85,9 @@ export class NftAuctionSale extends BaseNftSale {
 export class NftFixedPriceSale extends BaseNftSale {
   kind = NftSaleKind.FixedPrice as const;
 
-  @Prop({ required: true })
-  @Field(() => Int)
-  priceInSol: number;
+  @Prop({ required: true, type: Long })
+  @Field(() => GraphQlLamportScalar)
+  price: LamportAmount;
 }
 
 @ObjectType({ implements: BaseNftSale })

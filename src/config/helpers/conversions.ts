@@ -15,7 +15,6 @@ export const stringifiedOptionalBooleanZod = () => {
 const stringToInteger = (str: string | undefined): number | undefined =>
   str !== undefined ? parseInt(str) : undefined;
 
-// TODO is it necessary to have separate function ? cant i chain default()?
 export const stringifiedIntegerZod = (defaultVal: number) => {
   return z.preprocess(stringToInteger, z.number().default(defaultVal));
 };

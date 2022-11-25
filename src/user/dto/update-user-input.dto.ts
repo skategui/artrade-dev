@@ -11,6 +11,7 @@ export const updateUserInputDtoKeys: (keyof UserInput)[] = [
   'biography',
   'twitterUrl',
   'tagsId',
+  'bannerUrl',
   'instagramUrl', // if you wish to have other field from the user model available to update, add it here
 ];
 
@@ -26,4 +27,7 @@ export class UpdateUserInputDto extends PartialType(PickType(UserInput, updateUs
 
   @Field({ nullable: true })
   currentPassword?: string;
+
+  @Field(() => GraphQLUpload, { nullable: true })
+  bannerFile?: Promise<FileUpload>;
 }

@@ -22,6 +22,11 @@ export const defaultSubDocSchemaOption: SchemaOptions = {
   _id: false,
 };
 
+export const defaultRootDocWithDiscriminatorSchemaOption: SchemaOptions = {
+  ...defaultRootDocSchemaOption,
+  strictQuery: false, // Workaround for mongoose bug https://github.com/nestjs/mongoose/issues/1516
+};
+
 export const defaultSubDocWithDiscriminatorSchemaOption: SchemaOptions = {
   ...defaultSubDocSchemaOption,
   strictQuery: false, // Workaround for mongoose bug https://github.com/nestjs/mongoose/issues/1516

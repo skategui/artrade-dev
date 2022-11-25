@@ -1,18 +1,21 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { CollectionId } from '../collections/collection.model';
+import { Long } from 'mongodb';
+import { NftCollectionId } from '../collections/nft-collection.model';
 import { defaultRootDocSchemaOption } from '../helpers/default-schema-option.tools';
 import { DefaultModel } from '../helpers/default.model';
 import { TagId } from '../tag/tag.model';
+import { CreatePayload } from '../types/mongo-helpers';
 import { UserId } from '../user/model/user.model';
 import { BaseNftSale, NftSale, registerNftSaleSchemas } from './nft-sale';
 import { Royalties } from './royalties.model';
 
 export type NftId = string;
+export type LamportAmount = Long;
 
 @ObjectType()
 @Schema(defaultRootDocSchemaOption)
-export class NFT extends DefaultModel {
+export class Nft extends DefaultModel {
   @Prop({ required: true, dunique: true })
   @Field(() => String)
   mintAddress: string;
@@ -39,11 +42,11 @@ export class NFT extends DefaultModel {
 
   @Prop()
   @Field(() => String, { nullable: true })
-  ownerId?: UserId;
+  ownerId?: UserId; // not set when the NFT is created but not bought yet
 
   @Prop({ required: true })
   @Field(() => String)
-  collectionId: CollectionId;
+  collectionId: NftCollectionId;
 
   @Prop({ required: true })
   @Field(() => String)
@@ -66,9 +69,11 @@ export class NFT extends DefaultModel {
   viewCount: number;
 }
 
+export type NftCreatePayload = CreatePayload<Nft, 'tagIds' | 'royalties'>;
+
 @ArgsType()
-export class NFtInput extends NFT {}
+export class NftInput extends Nft {}
 
-export const NFTSchema = SchemaFactory.createForClass(NFT);
+export const NftSchema = SchemaFactory.createForClass(Nft);
 
-registerNftSaleSchemas(NFTSchema.path('sale') as any);
+registerNftSaleSchemas(NftSchema.path('sale') as any);

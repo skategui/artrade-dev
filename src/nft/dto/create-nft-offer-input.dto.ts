@@ -1,7 +1,7 @@
 import { InputType } from '@nestjs/graphql';
-import { CreateCommonNFTInput } from './create-common-nft-input.dto';
+import { CreateCommonNftInput } from './create-common-nft-input.dto';
 
 @InputType()
-export class CreateNFTOfferInput extends CreateCommonNFTInput {
+export class CreateNftOfferInput extends CreateCommonNftInput {
   // add specific fields related to offer here
 }

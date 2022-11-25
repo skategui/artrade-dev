@@ -8,6 +8,7 @@ export type InferConfig<M extends EnvFieldMap> = {
   [key in keyof M]: z.TypeOf<M[key][1]>;
 };
 
+/* istanbul ignore next */
 export const createConfigFromEnv = <FM extends EnvFieldMap>(
   fields: FM,
   env: NodeJS.ProcessEnv,

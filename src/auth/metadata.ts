@@ -3,3 +3,6 @@ export const ENDPOINT_IS_PUBLIC_METADATA_KEY = 'ENDPOINT_IS_PUBLIC';
 
 // Which roles are authorized for this endpoint
 export const ENDPOINT_AUTHORIZED_ROLES_METADATA_KEY = 'ENDPOINT_AUTHORIZED_ROLES';
+
+// Whether the endpoint has been decorated as @DevEndpoint()
+export const ENDPOINT_IS_DEV_ENDPOINT_METADATA_KEY = 'ENDPOINT_IS_DEV_ENDPOINT';

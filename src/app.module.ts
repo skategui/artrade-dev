@@ -6,19 +6,22 @@ import { AnalyticModule } from './analytic/analytic.module';
 import { AuthModule } from './auth/auth.module';
 import { EndpointAuthMonitorGuard } from './auth/guards/endpoint-auth-monitor.guard';
 import { BlockchainModule } from './blockchain/blockchain.module';
-import { CollectionModule } from './collections/collection.module';
+import { NftCollectionModule } from './collections/nft-collection.module';
 import { ConfigModule } from './config/config.module';
+import { ElasticsearchModule } from './elasticsearch/elasticsearch.module';
+import { VerificationModule } from './email-verification/email-verification.module';
 import { EmailingModule } from './emailing/emailing.module';
 import { GoogleModule } from './google/google.module';
-import { graphqlModule } from './graphql.module';
+import { graphqlModule } from './graphql/graphql.module';
+import './helpers/lodash-mixins/register-lodash-mixins';
 import { LicenceModule } from './licence/licence.module';
 import { mongoModule } from './mongo.module';
 import { NewsFeedModule } from './newsfeed/newsfeed.module';
-import { NFTModule } from './nft/nft.module';
+import { NftModule } from './nft/nft.module';
+import { NftHistoryModule } from './nfthistory/nft-history.module';
 import { s3Module } from './s3.module';
 import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
-import { VerificationModule } from './verification/verification.module';
 
 @Module({
   imports: [
@@ -34,14 +37,16 @@ import { VerificationModule } from './verification/verification.module';
     UserModule,
     TagModule,
     AnalyticModule,
-    CollectionModule,
-    NFTModule,
+    NftCollectionModule,
+    NftModule,
     EmailingModule,
     BlockchainModule,
     GoogleModule,
     NewsFeedModule,
     VerificationModule,
     LicenceModule,
+    NftHistoryModule,
+    ElasticsearchModule,
   ],
   providers: [
     {

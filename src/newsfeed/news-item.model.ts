@@ -1,6 +1,6 @@
 import { Field, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql';
-import { CollectionNFT } from '../collections/collection.model';
-import { NFT } from '../nft/nft.model';
+import { NftCollection } from '../collections/nft-collection.model';
+import { Nft } from '../nft/nft.model';
 import { User } from '../user/model/user.model';
 
 export enum NewsItemKind {
@@ -42,14 +42,14 @@ export class ProfileNewsItem extends NewsItem {
 export class CollectionNewsItem extends NewsItem {
   kind = NewsItemKind.Collection as const;
 
-  @Field(() => CollectionNFT)
-  collection: CollectionNFT;
+  @Field(() => NftCollection)
+  collection: NftCollection;
 }
 
 @ObjectType({ implements: NewsItem })
 export class NftNewsItem extends NewsItem {
   kind = NewsItemKind.Nft as const;
 
-  @Field(() => NFT)
-  nft: NFT;
+  @Field(() => Nft)
+  nft: Nft;
 }

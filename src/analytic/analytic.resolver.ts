@@ -18,7 +18,7 @@ export class AnalyticResolver {
   @Mutation(() => Analytic)
   async pushEvent(
     @Args() input: PushEventInputDto,
-    @OptionalCurrentUserId() userId: UserId,
+    @OptionalCurrentUserId() userId?: UserId,
   ): Promise<Analytic> {
     this.logger.verbose('pushEvent');
     return await this.service.create(input, userId);

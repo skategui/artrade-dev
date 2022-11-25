@@ -1,7 +1,10 @@
 import { ArgsType, Field, InputType, registerEnumType } from '@nestjs/graphql';
+import { GraphQlLamportScalar } from '../../graphql/scalars/lamport.scalar';
 import { createPaginationArgs } from '../../helpers/pagination/pagination-args.graphql';
+import { TagId } from '../../tag/tag.model';
 import { UserId } from '../../user/model/user.model';
-import { NftId } from '../nft.model';
+import { NftSaleKind } from '../nft-sale';
+import { LamportAmount, NftId } from '../nft.model';
 
 export enum ListNftInputSortFields {
   createdAt = 'createdAt',
@@ -14,13 +17,25 @@ registerEnumType(ListNftInputSortFields, {
 @InputType()
 export class ListNftFilterInputDto {
   @Field(() => [String], { nullable: true })
-  nftIds?: NftId[];
+  ids?: NftId[];
 
   @Field(() => [String], { nullable: true })
   creatorIds?: UserId[];
 
   @Field(() => [String], { nullable: true })
   ownerIds?: UserId[];
+
+  @Field(() => [NftSaleKind], { nullable: true })
+  saleKinds?: NftSaleKind[];
+
+  @Field(() => [String], { nullable: true })
+  tagIds?: TagId[];
+
+  @Field(() => GraphQlLamportScalar, { nullable: true })
+  minPrice?: LamportAmount;
+
+  @Field(() => GraphQlLamportScalar, { nullable: true })
+  maxPrice?: LamportAmount;
 }
 
 @ArgsType()

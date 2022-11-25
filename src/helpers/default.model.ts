@@ -1,7 +1,8 @@
-import { Field, ObjectType } from '@nestjs/graphql';
+import { Field, InterfaceType, ObjectType } from '@nestjs/graphql';
 import { Prop } from '@nestjs/mongoose';
 import { v4 } from 'uuid';
 
+@InterfaceType()
 @ObjectType({ isAbstract: true })
 export class DefaultModel {
   @Field()

@@ -9,11 +9,11 @@ import {
   ParsedAccountData,
   PublicKey,
 } from '@solana/web3.js';
-import { FetchCollectionImageBlockchainEvent } from '../collections/collection-metadata-event';
-import { CollectionService } from '../collections/collection.service';
+import { FetchNftCollectionImageBlockchainEvent } from '../collections/nft-collection-metadata-event';
+import { NftCollectionService } from '../collections/nft-collection.service';
 import { resizeImageFromUri } from '../helpers/image-resizer';
 import { AppLogger } from '../logging/logging.service';
-import { FetchNFTImageBlockchainEvent } from '../nft/nft-metadata-event';
+import { FetchNftImageBlockchainEvent } from '../nft/events/fetch-nft-image-blockchain.event';
 import { NftService } from '../nft/nft.service';
 import { FileStorageService } from '../storage/file-storage.service';
 
@@ -25,20 +25,21 @@ const metaplex = Metaplex.make(connection).use(keypairIdentity(wallet)).use(bund
 
 export type WalletAddr = string;
 
+/* istanbul ignore next */
 @Injectable()
 export class BlockchainService {
   constructor(
     private logger: AppLogger,
     private readonly nftService: NftService,
-    private readonly collectionService: CollectionService,
+    private readonly collectionService: NftCollectionService,
     private readonly fileStorageService: FileStorageService,
   ) {
     this.logger.setContext(this.constructor.name);
   }
 
-  @OnEvent(FetchCollectionImageBlockchainEvent.symbol)
+  @OnEvent(FetchNftCollectionImageBlockchainEvent.symbol)
   async fetchCollectionImageBlockchain(
-    payload: FetchCollectionImageBlockchainEvent,
+    payload: FetchNftCollectionImageBlockchainEvent,
   ): Promise<void> {
     this.logger.verbose('FetchCollectionImageBlockchain');
     this.logger.verbose(payload);
@@ -67,9 +68,9 @@ export class BlockchainService {
     await this.collectionService.updateThumbnail(payload.collectionId, s3Uri);
   }
 
-  @OnEvent(FetchNFTImageBlockchainEvent.symbol)
-  async fetchNFTImageFromBlockchain(payload: FetchNFTImageBlockchainEvent): Promise<void> {
-    console.log('fetchNFTMetadataBlockchain');
+  @OnEvent(FetchNftImageBlockchainEvent.symbol)
+  async fetchNftImageFromBlockchain(payload: FetchNftImageBlockchainEvent): Promise<void> {
+    console.log('fetchNftImageFromBlockchain');
     console.log(payload);
 
     // get data from blockchain
@@ -93,7 +94,7 @@ export class BlockchainService {
     });
     this.logger.debug('s3Uri');
 
-    await this.nftService.updateAsset(payload.nftId, s3Uri);
+    await this.nftService.updateThumbnail(payload.nftId, s3Uri);
   }
 
   private async getNftFromBlockchain(

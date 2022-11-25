@@ -6,7 +6,7 @@ import { mapValues, reduce } from 'lodash';
 import portFinder from 'portfinder';
 import request from 'supertest';
 import { ConfigService } from '../../config/config.service';
-import { graphqlModule, GRAPHQL_PATH } from '../../graphql.module';
+import { graphqlModule, GRAPHQL_PATH } from '../../graphql/graphql.module';
 import {
   serviceTestBaseImports,
   ServiceTestingModuleMeta,

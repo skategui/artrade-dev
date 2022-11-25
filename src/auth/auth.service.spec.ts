@@ -7,6 +7,7 @@ import { ConfigService } from '../config/config.service';
 import { AppLogger } from '../logging/logging.service';
 import { mongoDocMock } from '../test/helpers/mongo-doc-mock';
 import { SilentLogger } from '../test/helpers/silent-logger.service';
+import { BaseUser } from '../user/model/base-user.model';
 import { AuthService, UserAuthTrait } from './auth.service';
 import { Role, TokenType } from './types';
 
@@ -53,7 +54,7 @@ describe('AuthService', () => {
   describe('signIn', () => {
     it('should sign in successfully', async () => {
       userAuth.tryLoginByEmailAndPassword.mockResolvedValue(
-        mongoDocMock({ email: 'correctEmail@foo.com', password: 'hash' }),
+        mongoDocMock<BaseUser>({ email: 'correctEmail@foo.com', password: 'hash' }),
       );
       expect(await service.signIn({ email: 'correctEmail@foo.com', password: 'foo' })).toEqual(
         tokenPairExpected,
@@ -84,7 +85,7 @@ describe('AuthService', () => {
         email: 'correctEmail@foo.com',
         password: 'hash',
       };
-      const userDoc = mongoDocMock(userPayload);
+      const userDoc = mongoDocMock<BaseUser>(userPayload);
       const refreshToken = jwtService.sign({ sub: userPayload.id, type: TokenType.Refresh });
       userAuth.getOne.mockResolvedValue(userDoc);
       const tokenPair = await service.refreshAuthToken(refreshToken);

@@ -1,6 +1,6 @@
 import { forwardRef, Module } from '@nestjs/common';
+import { VerificationModule } from '../email-verification/email-verification.module';
 import { UserModule } from '../user/user.module';
-import { VerificationModule } from '../verification/verification.module';
 import { EmailingResolver } from './emailing.resolver';
 import { EmailingService } from './emailing.service';
 

@@ -17,9 +17,9 @@ export class LicenceService {
     return (await this.model.create({ name })).toObject();
   }
 
-  async getMany(filter?: TagFilter, pagination?: MongoPagination<Licence>): Promise<Licence[]> {
+  async getMany(filter?: LicenceFilter, pagination?: MongoPagination<Licence>): Promise<Licence[]> {
     this.logger.verbose('getMany');
-    const mongoFilter = filterToMongoFilter(filter || {});
+    const mongoFilter = licencefilterToMongoFilter(filter || {});
     const query = this.model.find(mongoFilter);
     const docs = await paginateQuery<Licence>(query, pagination).lean().exec();
     return docs;
@@ -55,11 +55,11 @@ export class LicenceService {
   }
 }
 
-export interface TagFilter {
+export interface LicenceFilter {
   ids?: LicenceId[];
 }
 
-const filterToMongoFilter = (filter: TagFilter): FilterQuery<Licence> => {
+export const licencefilterToMongoFilter = (filter: LicenceFilter): FilterQuery<Licence> => {
   const { ids } = filter;
   const query: FilterQuery<Licence> = {};
   if (ids) {

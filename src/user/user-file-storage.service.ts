@@ -7,6 +7,7 @@ import { FileStorageService } from '../storage/file-storage.service';
 import { createAlphanumericId, getSerializedTimestamp } from '../storage/helpers';
 import { UserId } from './model/user.model';
 
+/* istanbul ignore next */
 @Injectable()
 export class UserFileStorageService {
   constructor(private logger: AppLogger, private readonly storageService: FileStorageService) {
@@ -21,6 +22,15 @@ export class UserFileStorageService {
       throw new UserAvatarFileUploadFailed(error.message);
     }
   }
+
+  async uploadBanner(userId: UserId, avatarFile: FileUpload): Promise<string> {
+    const { createReadStream, filename } = avatarFile;
+    try {
+      return await this.storageService.put(createReadStream(), createBannerPath(userId, filename));
+    } catch (error) {
+      throw new UserBannerFileUploadFailed(error.message);
+    }
+  }
 }
 
 const createPath = (userId: UserId, originalFileName: string): string => {
@@ -33,8 +43,18 @@ const createAvatarPath = (userId: UserId, originalFileName: string): string => {
   return `user/avatar/${createPath(userId, originalFileName)}`;
 };
 
+const createBannerPath = (userId: UserId, originalFileName: string): string => {
+  return `user/banner/${createPath(userId, originalFileName)}`;
+};
+
 export class UserAvatarFileUploadFailed extends BadInputError {
   constructor(message: string) {
     super(`Failed to upload user avatar file: ${message}`);
+  }
+}
+
+export class UserBannerFileUploadFailed extends BadInputError {
+  constructor(message: string) {
+    super(`Failed to upload user banner file: ${message}`);
   }
 }

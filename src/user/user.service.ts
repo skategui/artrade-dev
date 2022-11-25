@@ -5,6 +5,7 @@ import DataLoader from 'dataloader';
 import { keyBy } from 'lodash';
 import { FilterQuery, Model } from 'mongoose';
 import { v4 } from 'uuid';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { EmailingService } from '../emailing/emailing.service';
 import { assertAllExisting } from '../helpers/get-or-create-dataloader';
 import { MongoPagination, paginateQuery } from '../helpers/pagination/pagination';
@@ -12,7 +13,6 @@ import { hash } from '../helpers/strings.tools';
 import { AppLogger } from '../logging/logging.service';
 import { NftId } from '../nft/nft.model';
 import { TagService } from '../tag/tag.service';
-import { VerificationService } from '../verification/verification.service';
 import { BaseUserService } from './base-user.service';
 import { CreateUserInput } from './dto/create-user-input.dto';
 import { UpdateUserInputDto } from './dto/update-user-input.dto';
@@ -29,7 +29,7 @@ export class UserService extends BaseUserService<User> {
     private readonly emailingService: EmailingService,
     private readonly fileStorageService: UserFileStorageService,
     private readonly verifyTwitterService: VerifyTwitterService,
-    private readonly verificationService: VerificationService,
+    private readonly verificationService: EmailVerificationService,
   ) {
     super(model);
     this.logger.setContext(this.constructor.name);
@@ -118,7 +118,7 @@ export class UserService extends BaseUserService<User> {
 
   async updateUser(
     userId: UserId,
-    { newPassword, currentPassword, avatarFile, ...form }: UpdateUserInputDto,
+    { newPassword, currentPassword, avatarFile, bannerFile, ...form }: UpdateUserInputDto,
   ): Promise<User | null> {
     const passwordIsProvided = Boolean(currentPassword);
     if (passwordIsProvided) {
@@ -136,6 +136,11 @@ export class UserService extends BaseUserService<User> {
     const avatarUrl = avatarFile
       ? await this.fileStorageService.uploadAvatar(userId, await avatarFile)
       : undefined;
+
+    const bannerUrl = bannerFile
+      ? await this.fileStorageService.uploadBanner(userId, await bannerFile)
+      : undefined;
+
     const result = await this.model.findOneAndUpdate(
       { _id: userId },
       {
@@ -143,6 +148,7 @@ export class UserService extends BaseUserService<User> {
           ...form,
           ...(form.tagsId ? { tags: await this.tagService.validateIdsExist(form.tagsId) } : {}),
           ...(avatarUrl ? { avatarUrl } : {}),
+          ...(bannerUrl ? { bannerUrl } : {}),
           ...(newPassword ? { password: hash(newPassword) } : {}),
         },
       },
@@ -188,7 +194,7 @@ export class UserService extends BaseUserService<User> {
   async addToBookmark(nftId: NftId, myId: UserId): Promise<void> {
     await this.model.findOneAndUpdate(
       { _id: myId },
-      { $addToSet: { bookmarkIds: nftId } },
+      { $addToSet: { bookmarks: { nftId, addedAt: new Date() } } },
       { new: true },
     );
   }
@@ -197,7 +203,7 @@ export class UserService extends BaseUserService<User> {
     await this.model.findOneAndUpdate(
       { _id: myId },
       {
-        $pull: { bookmarkIds: nftId },
+        $pull: { bookmarks: { nftId } },
       },
       { new: true },
     );
@@ -227,15 +233,51 @@ export class UserService extends BaseUserService<User> {
   async verifyEmail(email: string, code: string): Promise<User | null> {
     const verification = await this.verificationService.getByEmail(email);
     if (verification && verification.code === code) {
-      return this.model
-        .findOneAndUpdate(
-          { _id: verification.userId },
-          { $set: { emailVerified: true } },
-          { new: true },
-        )
-        .exec();
+      const user = await this.model.findOneAndUpdate(
+        { _id: verification.userId },
+        { $set: { emailVerified: true } },
+        { new: true },
+      );
+      await this.verificationService.delete(verification._id);
+      return user;
     }
     return null;
+  }
+
+  async forgotPassword(email: string): Promise<boolean> {
+    const user = await this.getByEmail(email);
+    if (!user) {
+      throw Error(`User not found with email ${email}`);
+    }
+    if (user.emailVerified) {
+      await this.emailingService.resentEmail(user, true);
+      return true;
+    } else {
+      throw Error(`User email is not verified`);
+    }
+  }
+
+  async reinitializePassword(email: string, code: string, password: string): Promise<boolean> {
+    const verification = await this.verificationService.getByEmail(email);
+    if (!verification) {
+      throw Error(`Invalid code verification`);
+    }
+    if (verification.code === code) {
+      await this.model.findOneAndUpdate(
+        { _id: verification.userId },
+        {
+          $set: {
+            password: hash(password),
+          },
+        },
+        { new: true },
+      );
+      await this.updateLastestActivity(verification.userId);
+      await this.verificationService.delete(verification._id);
+      return true;
+    } else {
+      throw Error(`Invalid code verification`);
+    }
   }
 
   createDataloaderById(): DataLoader<UserId, User> {
@@ -268,10 +310,21 @@ export interface UserFilter {
   nameRegexp?: string;
   nickname?: string;
   refreshJwtHash?: string;
+  followedByUserId?: UserId;
+  bookmarkedNftIds?: NftId[];
 }
 
 export const userFilterToMongoFilter = (filter: UserFilter): FilterQuery<User> => {
-  const { id, ids, nameRegexp, nickname, email, refreshJwtHash } = filter;
+  const {
+    id,
+    ids,
+    nameRegexp,
+    nickname,
+    email,
+    refreshJwtHash,
+    followedByUserId,
+    bookmarkedNftIds,
+  } = filter;
   const query: FilterQuery<User> = {};
   if (nickname) {
     query.nickname = nickname;
@@ -294,6 +347,12 @@ export const userFilterToMongoFilter = (filter: UserFilter): FilterQuery<User> =
   }
   if (refreshJwtHash) {
     query.refreshJwtHash = refreshJwtHash;
+  }
+  if (followedByUserId) {
+    query.followerIds = followedByUserId;
+  }
+  if (bookmarkedNftIds) {
+    query['bookmarks.nftId'] = { $in: bookmarkedNftIds };
   }
   return query;
 };

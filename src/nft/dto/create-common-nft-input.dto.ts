@@ -1,40 +1,33 @@
 import { Field, InputType, Int } from '@nestjs/graphql';
-import { CollectionId } from 'aws-sdk/clients/rekognition';
-import { IsArray, IsInt, IsString, ValidateNested } from 'class-validator';
+import { IsArray, ValidateNested } from 'class-validator';
+import { NftCollectionId } from '../../collections/nft-collection.model';
 import { TagId } from '../../tag/tag.model';
 import { RoyaltiesInputDto } from './create-royalties-input.dto';
 
 @InputType()
-export class CreateCommonNFTInput {
-  @IsString()
-  @Field(() => String, { nullable: false })
+export class CreateCommonNftInput {
+  @Field({ nullable: false })
   mintAddress: string;
 
   @IsArray()
   @Field(() => [String], { nullable: true })
   tagIds: TagId[];
 
-  @IsString()
-  @Field(() => String)
+  @Field()
   title: string;
 
-  @IsString()
-  @Field(() => String)
+  @Field()
   description: string;
 
-  @IsString()
-  @Field(() => String)
+  @Field()
   thumbnail: string;
 
-  @IsString()
-  @Field(() => String)
-  collectionId: CollectionId;
+  @Field()
+  collectionId: NftCollectionId;
 
-  @IsString()
-  @Field(() => String)
+  @Field()
   license: string;
 
-  @IsInt()
   @Field(() => Int)
   numberOfEdition: number;
 

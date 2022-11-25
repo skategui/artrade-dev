@@ -4,6 +4,7 @@ import { Reflector } from '@nestjs/core';
 import { AppLogger } from '../logging/logging.service';
 import {
   ENDPOINT_AUTHORIZED_ROLES_METADATA_KEY,
+  ENDPOINT_IS_DEV_ENDPOINT_METADATA_KEY,
   ENDPOINT_IS_PUBLIC_METADATA_KEY,
 } from './metadata';
 import { Role } from './types';
@@ -22,6 +23,14 @@ export class EndpointAuthMetadataManager {
       endpointHandler,
     );
     return isPublic ?? false;
+  }
+
+  isDevEndpoint(endpointHandler: Function): boolean {
+    const isDevEndpoint = this.getMetadataFromContextHandler<boolean>(
+      ENDPOINT_IS_DEV_ENDPOINT_METADATA_KEY,
+      endpointHandler,
+    );
+    return isDevEndpoint ?? false;
   }
 
   isRoleProtectedEndpoint(endpointHandler: Function): boolean {

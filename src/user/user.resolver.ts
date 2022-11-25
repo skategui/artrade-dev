@@ -9,6 +9,7 @@ import {
   Resolver,
 } from '@nestjs/graphql';
 import { UserInputError } from 'apollo-server-express';
+import { sortBy } from 'lodash';
 import { setAsAuthorizedDocument } from '../auth/authz/rule-builders/can-read-authorized-documents';
 import { CurrentUserId } from '../auth/decorators/current-user-id.decorator';
 import { Public } from '../auth/decorators/public.decorator';
@@ -19,16 +20,19 @@ import {
   DataLoaderContextKey,
   getOrCreateDataloader,
 } from '../helpers/get-or-create-dataloader';
+import { Direction } from '../helpers/pagination/pagination';
 import { graphqlToMongoPagination } from '../helpers/pagination/pagination-args.graphql';
 import { AppLogger } from '../logging/logging.service';
-import { NFT, NftId } from '../nft/nft.model';
+import { NftId } from '../nft/nft.model';
 import { NftService } from '../nft/nft.service';
 import { Tag } from '../tag/tag.model';
 import { TagService } from '../tag/tag.service';
+import { ChangePasswordInput } from './dto/change-password.input';
 import { CreateUserInput } from './dto/create-user-input.dto';
 import { InviteInput } from './dto/invite.input';
 import { ListUserQueryArgs } from './dto/list-user-input.dto';
 import { UpdateUserInputDto } from './dto/update-user-input.dto';
+import { Bookmark } from './model/bookmark.model';
 import { User, UserId } from './model/user.model';
 import { UserService } from './user.service';
 
@@ -155,6 +159,20 @@ export class UserResolver {
     return await this.userService.verifyTwitter(id, url);
   }
 
+  @Public()
+  @Mutation(() => Boolean)
+  async forgotPassword(@Args('email') email: string): Promise<boolean> {
+    this.logger.verbose('forgotPassword');
+    return await this.userService.forgotPassword(email);
+  }
+
+  @Public()
+  @Mutation(() => Boolean)
+  async changePassword(@Args() input: ChangePasswordInput): Promise<boolean> {
+    this.logger.verbose('changePassword');
+    return await this.userService.reinitializePassword(input.email, input.code, input.password);
+  }
+
   /* region ==================== RESOLVE FIELD ==================== */
   @ResolveField(() => Int)
   followersCount(@Parent() user: User): number {
@@ -171,16 +189,18 @@ export class UserResolver {
     return assertNoneIsError(await dataloader.loadMany(user.followerIds));
   }
 
-  @ResolveField(() => [NFT])
-  async bookmarks(@Parent() user: User, @Context() context: object): Promise<NFT[]> {
-    const dataloader = getOrCreateDataloader(
-      context,
-      DataLoaderContextKey.NftById,
-      this.nftService.createDataloaderById(),
-    );
-    return assertNoneIsError(await dataloader.loadMany(user.bookmarkIds));
+  @ResolveField(() => [Bookmark])
+  bookmarks(
+    @Args('sortOrder', { nullable: true }) sortOrder: Direction,
+    @Parent() user: User,
+  ): Bookmark[] {
+    let bookmarks = user.bookmarks;
+    if (sortOrder) {
+      bookmarks = sortBy(bookmarks, (b) => b.addedAt, sortOrder === Direction.Asc ? 'asc' : 'desc');
+    }
+    return bookmarks;
   }
-  /* ================= Resolve fields =============== */
+
   @ResolveField(() => [Tag])
   async tags(@Parent() user: User, @Context() context: object): Promise<Tag[]> {
     const dataloader = getOrCreateDataloader(

@@ -9,7 +9,6 @@ import { graphqlUploadExpress } from 'graphql-upload';
 import helmet from 'helmet';
 import { AppModule, AppStartedEvent } from './app.module';
 import { ConfigService } from './config/config.service';
-import { rawBodyMiddleware } from './helpers/rawBody.middleware';
 import { AppLogger } from './logging/logging.service';
 import { addGlobalProviders } from './main.global';
 
@@ -31,7 +30,6 @@ async function bootstrap() {
     httpsOptions: gethttpsOptionsFromEnv(),
   });
   const conf = app.get(ConfigService);
-  app.use(rawBodyMiddleware());
   app.use(
     graphqlUploadExpress({
       maxFileSize: conf.fileUploadMaxSize,

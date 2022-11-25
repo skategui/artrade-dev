@@ -1,10 +1,12 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
+import { Field, InputType } from '@nestjs/graphql';
 import { IsInt } from 'class-validator';
-import { CreateCommonNFTInput } from './create-common-nft-input.dto';
+import { GraphQlLamportScalar } from '../../graphql/scalars/lamport.scalar';
+import { LamportAmount } from '../nft.model';
+import { CreateCommonNftInput } from './create-common-nft-input.dto';
 
 @InputType()
-export class CreateNFTFixedPriceInput extends CreateCommonNFTInput {
+export class CreateNftFixedPriceInput extends CreateCommonNftInput {
   @IsInt()
-  @Field(() => Int)
-  priceInSol: number;
+  @Field(() => GraphQlLamportScalar)
+  price: LamportAmount;
 }

@@ -1,11 +1,12 @@
 import { forwardRef, Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { VerificationModule } from '../email-verification/email-verification.module';
 import { EmailingModule } from '../emailing/emailing.module';
-import { NFTModule } from '../nft/nft.module';
+import { NftModule } from '../nft/nft.module';
 import { FileStorageModule } from '../storage/file-storage.module';
 import { TagModule } from '../tag/tag.module';
-import { VerificationModule } from '../verification/verification.module';
 import { AdminService } from './admin.service';
+import { BookmarkResolver } from './bookmark.resolver';
 import { Admin, AdminSchema } from './model/admin.model';
 import { User, UserSchema } from './model/user.model';
 import { UserFileStorageService } from './user-file-storage.service';
@@ -16,7 +17,7 @@ import { VerifyTwitterService } from './verify-twitter.service';
 @Module({
   imports: [
     forwardRef(() => EmailingModule),
-    forwardRef(() => NFTModule),
+    forwardRef(() => NftModule),
     MongooseModule.forFeature([
       { name: User.name, schema: UserSchema },
       { name: Admin.name, schema: AdminSchema },
@@ -32,6 +33,7 @@ import { VerifyTwitterService } from './verify-twitter.service';
     UserResolver,
     UserFileStorageService,
     VerifyTwitterService,
+    BookmarkResolver,
   ],
   exports: [UserService, AdminService],
 })

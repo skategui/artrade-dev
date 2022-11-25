@@ -25,6 +25,10 @@ export class EndpointAuthMonitorGuard implements CanActivate {
     if (isPublic) {
       return true; // This endpoint is declared public. That's ok.
     }
+    const isDevEndpoint = this.endpointAuthMetadataManager.isDevEndpoint(endpointHandler);
+    if (isDevEndpoint) {
+      return true; // This endpoint is a dev endpoint. That's ok.
+    }
     const isRoleProtected =
       this.endpointAuthMetadataManager.isRoleProtectedEndpoint(endpointHandler);
     if (isRoleProtected) {

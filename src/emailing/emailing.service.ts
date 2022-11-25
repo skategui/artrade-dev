@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import axios, { AxiosResponse } from 'axios';
 import { ConfigService } from '../config/config.service';
+import { CreateVerificationInputDto } from '../email-verification/dto/create-verification-input.dto';
+import { EmailVerificationService } from '../email-verification/email-verification.service';
 import { AppLogger } from '../logging/logging.service';
 import { createAlphanumericId } from '../storage/helpers';
 import { User } from '../user/model/user.model';
-import { CreateVerificationInputDto } from '../verification/dto/create-verification-input.dto';
-import { VerificationService } from '../verification/verification.service';
 
 @Injectable()
 export class EmailingService {
   constructor(
     private logger: AppLogger,
     private readonly confService: ConfigService,
-    private readonly verificationService: VerificationService,
+    private readonly verificationService: EmailVerificationService,
   ) {
     this.logger.setContext(this.constructor.name);
   }
@@ -82,7 +82,7 @@ export class EmailingService {
       }),
     ).toString('base64');
     const queryStringEncoded = encodeURIComponent(message);
-    const uri = `https://artrade.app/reset-password?message=${queryStringEncoded}`;
+    const uri = `${this.confService.artradeApiBaseUrl}/reset-password?message=${queryStringEncoded}`;
     const link = `<a href='${uri}' target='_blank'>Click the link to reset password</a>`;
     return {
       sender: {

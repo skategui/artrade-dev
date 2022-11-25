@@ -9,7 +9,7 @@ import { Analytic } from './analytic.model';
 import { PushEventInputDto } from './dto/push-event-input.dto';
 import { ListEventsPossible } from './types';
 
-interface AnalyticsVisitorCountFilter {
+export interface AnalyticsVisitorCountFilter {
   eventKeys?: ListEventsPossible[];
   nftIds?: NftId[];
   fromDate?: Date;
@@ -26,8 +26,8 @@ export class AnalyticService {
     this.logger.setContext(this.constructor.name);
   }
 
-  async create(input: PushEventInputDto, userId: UserId): Promise<Analytic> {
-    if (input.key === ListEventsPossible.NftScreenShown && !input.nftId) {
+  async create(input: PushEventInputDto, userId?: UserId): Promise<Analytic> {
+    if (input.key === ListEventsPossible.NftScreenShown && input.nftId) {
       this.nftService.increaseViewCount(input.nftId!);
     }
     return (await this.model.create({ ...input, userId })).toObject();

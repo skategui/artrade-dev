@@ -1,10 +1,10 @@
 import { ArgsType, Field, InputType, ObjectType } from '@nestjs/graphql';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { defaultRootDocSchemaOption } from '../../helpers/default-schema-option.tools';
-import { NftId } from '../../nft/nft.model';
 import { TagId } from '../../tag/tag.model';
 import { CreatePayload } from '../../types/mongo-helpers';
 import { BaseUser } from './base-user.model';
+import { Bookmark } from './bookmark.model';
 import { UserWallet } from './wallet.model';
 
 export type UserId = string;
@@ -16,13 +16,13 @@ export class User extends BaseUser {
   @Field()
   nickname: string;
 
-  @Prop({ required: true })
-  @Field()
-  firstName: string;
+  @Prop()
+  @Field({ nullable: false })
+  firstName?: string;
 
-  @Prop({ required: true })
-  @Field()
-  lastName: string;
+  @Prop()
+  @Field({ nullable: false })
+  lastName?: string;
 
   @Prop()
   @Field({ nullable: false })
@@ -72,9 +72,9 @@ export class User extends BaseUser {
   @Field(() => [String])
   followerIds: UserId[];
 
-  @Prop({ defaultValue: [], index: true })
-  @Field(() => [String])
-  bookmarkIds: NftId[];
+  @Prop([{ type: Bookmark, default: [], index: true }])
+  @Field(() => [Bookmark])
+  bookmarks: Bookmark[];
 
   @Prop()
   @Field({ nullable: true })
@@ -83,6 +83,10 @@ export class User extends BaseUser {
   @Prop()
   @Field(() => Boolean, { defaultValue: false })
   emailVerified: boolean;
+
+  @Prop()
+  @Field(() => String, { nullable: true })
+  bannerUrl?: string;
 }
 
 @ArgsType()
@@ -91,14 +95,14 @@ export class UserInput extends User {}
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
-export type UserCreatePayload = Omit<
-  CreatePayload<User>,
+export type UserCreatePayload = CreatePayload<
+  User,
   | 'twitterVerified'
   | 'inviteFriends'
   | 'isOnboarded'
   | 'wallets'
   | 'tagsId'
   | 'followerIds'
-  | 'bookmarkIds'
+  | 'bookmarks'
   | 'emailVerified'
 >;

@@ -1,9 +1,11 @@
-import { Field, InputType, Int } from '@nestjs/graphql';
+import { Field, InputType } from '@nestjs/graphql';
 import { IsDate, IsInt } from 'class-validator';
-import { CreateCommonNFTInput } from './create-common-nft-input.dto';
+import { GraphQlLamportScalar } from '../../graphql/scalars/lamport.scalar';
+import { LamportAmount } from '../nft.model';
+import { CreateCommonNftInput } from './create-common-nft-input.dto';
 
 @InputType()
-export class CreateNFTAuctionInput extends CreateCommonNFTInput {
+export class CreateNftAuctionInput extends CreateCommonNftInput {
   @IsDate()
   @Field(() => Date)
   startDate: Date;
@@ -13,6 +15,6 @@ export class CreateNFTAuctionInput extends CreateCommonNFTInput {
   endDate: Date;
 
   @IsInt()
-  @Field(() => Int)
-  startingPriceInSol: number;
+  @Field(() => GraphQlLamportScalar)
+  startingPrice: LamportAmount;
 }

@@ -4,6 +4,7 @@ import { ContentType, ObjectCannedACL } from 'aws-sdk/clients/s3';
 import { InjectS3, S3 } from 'nestjs-s3';
 import { ConfigService } from '../config/config.service';
 
+/* istanbul ignore next */
 @Injectable()
 export class FileStorageService {
   private bucketName: string;
