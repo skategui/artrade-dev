@@ -10,6 +10,13 @@ export interface GoogleUserInfo {
   picture?: string;
 }
 
+export interface GoogleUserInfoResponse {
+  email: string;
+  family_name?: string;
+  given_name?: string;
+  picture?: string;
+}
+
 /* istanbul ignore next */
 // handle the call to google API to get user profile info
 @Injectable()
@@ -19,11 +26,16 @@ export class GoogleUserInfoService {
   }
 
   async getUserData(accessToken: string): Promise<GoogleUserInfo | undefined> {
-    const { data } = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo?alt=json', {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
+    const { data } = await axios.post<GoogleUserInfoResponse>(
+      'https://www.googleapis.com/oauth2/v3/userinfo?alt=json',
+      {},
+      {
+        headers: {
+          'Accept-Encoding': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
       },
-    });
+    );
 
     if (!data.email) return undefined;
 

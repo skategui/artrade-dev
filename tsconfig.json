@@ -17,7 +17,8 @@
     "strictBindCallApply": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+     "allowJs": true
   },
-  "include": ["./src", "./.eslintrc.js", "./jest.config.js"]
+  "include": ["./src", "./.eslintrc.js", "./jest.config.js", "./mongo-migrations", "migrate-mongo-config.js"]
 }

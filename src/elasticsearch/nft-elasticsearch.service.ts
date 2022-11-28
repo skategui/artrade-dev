@@ -1,11 +1,13 @@
 import {
   BulkResponse,
+  IndexResponse,
   IndicesCreateRequest,
   IndicesCreateResponse,
+  MappingProperty,
   QueryDslBoolQuery,
   QueryDslFunctionScoreQuery,
   QueryDslQueryContainer,
-  WriteResponseBase,
+  UpdateResponse,
 } from '@elastic/elasticsearch/lib/api/types';
 import { Injectable, Optional } from '@nestjs/common';
 import { ElasticsearchService } from '@nestjs/elasticsearch';
@@ -19,6 +21,13 @@ import { NftSale, NftSaleKind } from '../nft/nft-sale';
 import { LamportAmount, Nft, NftId } from '../nft/nft.model';
 import { NftFilter, NftService } from '../nft/nft.service';
 import { NftHistoryRecordKind } from '../nfthistory/model/nft-history-record.model';
+import {
+  NftBookmarkedEvent,
+  NftPriceSaleChangedEvent,
+  NftPriceUpdatedEvent,
+  NftSoldEvent,
+  NftUnbookmarkedEvent,
+} from '../nfthistory/nft-history.event';
 import { NftHistoryService } from '../nfthistory/nft-history.service';
 import { TagId } from '../tag/tag.model';
 import { UserId } from '../user/model/user.model';
@@ -82,11 +91,32 @@ export class NftElasticsearchService {
     return await this.elasticsearchService.indices.create(this.getIndexSettings());
   }
 
-  async indexNftDoc(payload: NftIndexPayload): Promise<WriteResponseBase> {
+  async indexNftDoc(payload: NftIndexPayload): Promise<IndexResponse> {
     return await this.elasticsearchService.index({
       index: this.esIndexName,
       id: payload.nft._id,
       document: getDocumentMapping(payload),
+    });
+  }
+
+  async updateNftDocFields(id: NftId, payload: UpdateFieldsPayload): Promise<UpdateResponse> {
+    return await this.elasticsearchService.update({ index: this.esIndexName, id, doc: payload });
+  }
+
+  async updateNftDocByScript(
+    id: NftId,
+    script: string,
+    params: Record<string, unknown> = {},
+  ): Promise<UpdateResponse> {
+    // See https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-update.html#update-api-example
+    return await this.elasticsearchService.update({
+      index: this.esIndexName,
+      id,
+      script: {
+        source: script,
+        lang: 'painless',
+        params,
+      },
     });
   }
 
@@ -193,20 +223,69 @@ export class NftElasticsearchService {
   }
 
   @OnEvent(NftCreatedEvent.symbol)
-  async handleNftCreatedEvent(nft: Nft): Promise<void> {
+  async handleNftCreatedEvent({ nft }: NftCreatedEvent): Promise<void> {
     await this.indexNftDoc({
       nft,
-      recentBuyerIds: nft.ownerId ? [nft.ownerId] : [], // TODO ownerId really optional?
-      bookmarkedByUserIds: [
-        /* NFT was just created, nobody bookmarked it yet */
-      ],
-      viewerIds: [
-        /* NFT was just created, nobody viewed it yet */
-      ],
+      recentBuyerIds: nft.ownerId ? [nft.ownerId] : [],
+      bookmarkedByUserIds: [], // NFT was just created, nobody bookmarked it yet
+      viewerIds: [], // NFT was just created, nobody viewed it yet
     });
   }
 
+  @OnEvent(NftPriceUpdatedEvent.symbol)
+  async handleNftPriceUpdatedEvent({ nftId, price }: NftPriceUpdatedEvent): Promise<void> {
+    await this.updateNftDocFields(nftId, { price: price.toString() });
+  }
+
+  @OnEvent(NftPriceSaleChangedEvent.symbol)
+  async handleNftPriceSaleChangedEvent({ nftId, sale }: NftPriceSaleChangedEvent): Promise<void> {
+    await this.updateNftDocFields(nftId, {
+      saleKind: sale.kind,
+      price: getNftPrice(sale)?.toString(),
+    });
+  }
+
+  @OnEvent(NftSoldEvent.symbol)
+  async handleNftSoldEvent({ nftId, newOwnerId }: NftSoldEvent): Promise<void> {
+    await this.updateNftDocByScript(
+      nftId,
+      `ctx._source.recentBuyerIds.unshift(params.newOwnerId)`,
+      { newOwnerId },
+    );
+  }
+
+  @OnEvent(NftBookmarkedEvent.symbol)
+  async handleNftBookmarkedEvent({ nftId, userId }: NftBookmarkedEvent): Promise<void> {
+    await this.updateNftDocByScript(nftId, `ctx._source.bookmarkedByUserIds.add(params.userId)`, {
+      userId,
+    });
+  }
+
+  @OnEvent(NftUnbookmarkedEvent.symbol)
+  async handleNftUnbookmarkedEvent({ nftId, userId }: NftUnbookmarkedEvent): Promise<void> {
+    await this.updateNftDocByScript(
+      nftId,
+      `ctx._source.bookmarkedByUserIds.removeAll(Collections.singleton(params.userId))`,
+      {
+        userId,
+      },
+    );
+  }
+
   private getIndexSettings(): IndicesCreateRequest {
+    const properties: Record<keyof NftEsFields, MappingProperty> = {
+      titleNgram: { type: 'text', analyzer: 'ngram_analyzer' },
+      descriptionNgram: { type: 'text', analyzer: 'ngram_analyzer' },
+      creatorId: { type: 'keyword' },
+      recentBuyerIds: { type: 'keyword' },
+      bookmarkedByUserIds: { type: 'keyword' },
+      viewerIds: { type: 'keyword' },
+      collectionId: { type: 'keyword' },
+      saleKind: { type: 'keyword' },
+      createdAt: { type: 'date' },
+      price: { type: 'double' },
+      tagIds: { type: 'keyword' },
+    };
     return {
       index: this.esIndexName,
       settings: {
@@ -230,23 +309,7 @@ export class NftElasticsearchService {
           },
         },
       },
-      mappings: {
-        properties: {
-          titleNgram: { type: 'text', analyzer: 'ngram_analyzer' },
-          descriptionNgram: { type: 'text', analyzer: 'ngram_analyzer' },
-          creatorId: { type: 'keyword' },
-          ownerId: { type: 'keyword' },
-          recentBuyerIds: { type: 'keyword' },
-          bookmarkedByUserIds: { type: 'keyword' },
-          viewerIds: { type: 'keyword' },
-          collectionId: { type: 'keyword' },
-          saleKind: { type: 'keyword' },
-          createdAt: { type: 'date' },
-          updatedAt: { type: 'date' },
-          price: { type: 'double' },
-          tagIds: { type: 'keyword' },
-        },
-      },
+      mappings: { properties },
     };
   }
 }
@@ -262,20 +325,18 @@ const getNftPrice = (sale: NftSale): LamportAmount | null => {
   }
 };
 
-const getDocumentMapping = (payload: NftIndexPayload): Record<string, unknown> => {
+const getDocumentMapping = (payload: NftIndexPayload): NftEsFields => {
   const { nft, recentBuyerIds, bookmarkedByUserIds, viewerIds } = payload;
   return {
     titleNgram: nft.title,
     descriptionNgram: nft.description,
     creatorId: nft.creatorId,
-    ownerId: nft.ownerId,
     recentBuyerIds,
     bookmarkedByUserIds,
     viewerIds,
     collectionId: nft.collectionId,
     saleKind: nft.sale.kind,
     createdAt: nft.createdAt,
-    updatedAt: nft.updatedAt,
     price: getNftPrice(nft.sale)?.toString(),
     tagIds: nft.tagIds,
   };
@@ -375,7 +436,7 @@ const getEsQueryShould = ({
   recentBuyerIds,
   bookmarkedByUserIds,
   viewerIds,
-  favoredTagIds: tagIds,
+  favoredTagIds,
   creatorIds,
   collectionIds,
 }: NftEsShouldArgs): QueryDslQueryContainer[] => {
@@ -406,9 +467,9 @@ const getEsQueryShould = ({
       ...viewerIds.map((userId): QueryDslQueryContainer => ({ term: { viewerIds: userId } })),
     );
   }
-  if (tagIds) {
+  if (favoredTagIds) {
     shouldList.push(
-      ...tagIds.map((tagId): QueryDslQueryContainer => ({ term: { tagIds: tagId } })),
+      ...favoredTagIds.map((tagId): QueryDslQueryContainer => ({ term: { tagIds: tagId } })),
     );
   }
   if (creatorIds) {
@@ -489,3 +550,19 @@ type NftIndexPayload = {
   bookmarkedByUserIds: UserId[];
   viewerIds: UserId[];
 };
+
+type UpdateFieldsPayload = Partial<NftEsFields>;
+
+interface NftEsFields {
+  titleNgram: string;
+  descriptionNgram: string;
+  creatorId: UserId;
+  recentBuyerIds: UserId[];
+  bookmarkedByUserIds: UserId[];
+  viewerIds: UserId[];
+  collectionId: NftCollectionId;
+  saleKind: NftSaleKind;
+  createdAt: Date;
+  tagIds: TagId[];
+  price?: string; // Price is transsfered as string because JSON cannot hold int64.
+}

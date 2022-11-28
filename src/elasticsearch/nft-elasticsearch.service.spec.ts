@@ -1,12 +1,13 @@
 import EsMock from '@elastic/elasticsearch-mock';
 import {
   BulkResponse,
+  IndexResponse,
   IndicesCreateResponse,
   IndicesDeleteResponse,
   IndicesRefreshResponse,
   QueryDslQueryContainer,
   SearchResponse,
-  WriteResponseBase,
+  UpdateResponse,
 } from '@elastic/elasticsearch/lib/api/types';
 import { ElasticsearchModule as EsModule, ElasticsearchService } from '@nestjs/elasticsearch';
 import { Test, TestingModule } from '@nestjs/testing';
@@ -134,7 +135,7 @@ describe('NftElasticsearchService', () => {
           method: 'PUT',
           path: `/${service.esIndexName}/_doc/${nft._id}`,
         },
-        (): WriteResponseBase => ({
+        (): IndexResponse => ({
           _index: 'artrade_nfts',
           _id: nft._id,
           _version: 1,
@@ -154,6 +155,54 @@ describe('NftElasticsearchService', () => {
         }),
       ).toMatchObject({
         _id: nft._id,
+      });
+    });
+  });
+
+  describe('updateNftDocFields', () => {
+    it('should update an NFT document fields', async () => {
+      esMock.add(
+        {
+          method: 'POST',
+          path: `/${service.esIndexName}/_update/123`,
+        },
+        (): UpdateResponse => ({
+          _index: 'artrade_nfts',
+          _id: '123',
+          _version: 1,
+          result: 'updated',
+          _shards: { total: 2, successful: 1, failed: 0 },
+          _seq_no: 1,
+          _primary_term: 1,
+        }),
+      );
+      expect(await service.updateNftDocFields('123', { price: '1000' })).toMatchObject({
+        _id: '123',
+      });
+    });
+  });
+
+  describe('updateNftDocByScript', () => {
+    it('should update an NFT document by a script', async () => {
+      esMock.add(
+        {
+          method: 'POST',
+          path: `/${service.esIndexName}/_update/123`,
+        },
+        (): UpdateResponse => ({
+          _index: 'artrade_nfts',
+          _id: '123',
+          _version: 1,
+          result: 'updated',
+          _shards: { total: 2, successful: 1, failed: 0 },
+          _seq_no: 1,
+          _primary_term: 1,
+        }),
+      );
+      expect(
+        await service.updateNftDocByScript('123', 'ctx._source.foo = params.foo', { foo: 42 }),
+      ).toMatchObject({
+        _id: '123',
       });
     });
   });

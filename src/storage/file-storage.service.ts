@@ -1,19 +1,28 @@
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  ObjectCannedACL,
+  PutObjectCommand,
+  S3Client,
+} from '@aws-sdk/client-s3';
 import { Injectable } from '@nestjs/common';
-import AWS from 'aws-sdk';
-import { ContentType, ObjectCannedACL } from 'aws-sdk/clients/s3';
-import { InjectS3, S3 } from 'nestjs-s3';
+import { Readable } from 'stream';
 import { ConfigService } from '../config/config.service';
 
 /* istanbul ignore next */
 @Injectable()
 export class FileStorageService {
   private bucketName: string;
+  private s3Client: S3Client;
 
-  constructor(
-    private readonly configService: ConfigService,
-    @InjectS3() private readonly s3Client: S3,
-  ) {
-    this.bucketName = configService.s3.bucketName;
+  constructor(private readonly conf: ConfigService) {
+    this.s3Client = new S3Client({
+      endpoint: conf.s3.host,
+      region: conf.s3.region,
+      forcePathStyle: true,
+      credentials: { accessKeyId: conf.s3.accessKeyId, secretAccessKey: conf.s3.secretAccessKey },
+    });
+    this.bucketName = conf.s3.bucketName;
   }
 
   async putObjectInBucket(asset: { bucketPath: string; imageBuffer: Buffer }): Promise<string> {
@@ -24,42 +33,41 @@ export class FileStorageService {
       Body: imageBuffer,
       ContentType: 'image/webp',
     };
-    console.log('S3 params');
-    console.log(params);
-    const data = await this.s3Client.upload(params).promise();
-    return data.Location;
+    const command = new PutObjectCommand(params);
+    await this.s3Client.send(command);
+    return `${params.Bucket}/${params.Key}`;
   }
 
   async put(
-    readStream: AWS.S3.Body,
+    readStream: Readable,
     path: string,
-    acl: ObjectCannedACL = 'public-read',
-    contentType: ContentType = 'image/jpeg',
+    acl: ObjectCannedACL = ObjectCannedACL.public_read,
+    contentType = 'image/jpeg',
   ): Promise<string> {
-    const data = await this.s3Client
-      .upload({
-        Bucket: this.bucketName,
-        Key: path,
-        Body: readStream,
-        ContentType: contentType,
-        ACL: acl,
-      })
-      .promise();
-    return data.Location;
+    const params = {
+      Bucket: this.bucketName,
+      Key: path,
+      Body: readStream,
+      ContentType: contentType,
+      ACL: acl,
+    };
+
+    const command = new PutObjectCommand(params);
+    await this.s3Client.send(command);
+    return `${params.Bucket}/${params.Key}`;
   }
 
-  async get(path: string): Promise<AWS.S3.Body | undefined> {
-    const data = await this.s3Client
-      .getObject({
-        Bucket: this.bucketName,
-        Key: path,
-      })
-      .promise();
-
+  async get(path: string): Promise<Readable | ReadableStream | Blob | undefined> {
+    const params = {
+      Bucket: this.bucketName,
+      Key: path,
+    };
+    const command = new GetObjectCommand(params);
+    const data = await this.s3Client.send(command);
     return data.Body;
   }
 
-  async getOrThrow(path: string): Promise<AWS.S3.Body> {
+  async getOrThrow(path: string): Promise<Readable | ReadableStream | Blob> {
     const body = await this.get(path);
     if (!body) {
       throw new StorageObjectNotFound(this.bucketName, path);
@@ -68,12 +76,12 @@ export class FileStorageService {
   }
 
   async delete(path: string): Promise<void> {
-    await this.s3Client
-      .deleteObject({
-        Bucket: this.bucketName,
-        Key: path,
-      })
-      .promise();
+    const params = {
+      Bucket: this.bucketName,
+      Key: path,
+    };
+    const command = new DeleteObjectCommand(params);
+    await this.s3Client.send(command);
   }
 }
 

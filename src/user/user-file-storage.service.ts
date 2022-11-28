@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FileUpload } from 'graphql-upload';
 import path from 'path';
+import { Readable } from 'stream';
 import { BadInputError } from '../helpers/errors/BadInputError';
 import { AppLogger } from '../logging/logging.service';
 import { FileStorageService } from '../storage/file-storage.service';
@@ -26,7 +27,8 @@ export class UserFileStorageService {
   async uploadBanner(userId: UserId, avatarFile: FileUpload): Promise<string> {
     const { createReadStream, filename } = avatarFile;
     try {
-      return await this.storageService.put(createReadStream(), createBannerPath(userId, filename));
+      const stream: Readable = createReadStream();
+      return await this.storageService.put(stream, createBannerPath(userId, filename));
     } catch (error) {
       throw new UserBannerFileUploadFailed(error.message);
     }

@@ -5,4 +5,5 @@ export const s3ConfigZod = {
   accessKeyId: ['S3_ACCESS_KEY_ID', z.string()],
   secretAccessKey: ['S3_SECRET_ACCESS_KEY', z.string()],
   bucketName: ['IMAGES_BUCKET_NAME', z.string()],
+  region: ['S3_REGION', z.string()],
 } as const;

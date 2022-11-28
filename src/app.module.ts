@@ -15,11 +15,11 @@ import { GoogleModule } from './google/google.module';
 import { graphqlModule } from './graphql/graphql.module';
 import './helpers/lodash-mixins/register-lodash-mixins';
 import { LicenceModule } from './licence/licence.module';
+import { MongoMigrationModule } from './mongo-migration.module';
 import { mongoModule } from './mongo.module';
 import { NewsFeedModule } from './newsfeed/newsfeed.module';
 import { NftModule } from './nft/nft.module';
 import { NftHistoryModule } from './nfthistory/nft-history.module';
-import { s3Module } from './s3.module';
 import { TagModule } from './tag/tag.module';
 import { UserModule } from './user/user.module';
 
@@ -28,9 +28,9 @@ import { UserModule } from './user/user.module';
     ConfigModule,
     EventEmitterModule.forRoot(),
     ScheduleModule.forRoot(),
-    s3Module,
     mongoModule,
     graphqlModule,
+    MongoMigrationModule,
 
     /* APPLICATION MODULES */
     AuthModule,

@@ -5,7 +5,7 @@ if [ "$CC_POST_BUILD_HOOK" == '$APP_HOME/clean.sh' ]; then
   yarn build
   rm -rf $APP_HOME/src
   rm -rf $APP_HOME/.env
-  rm -rf $APP_HOME/.env.exemple
+  rm -rf $APP_HOME/.env.example
   rm -rf $APP_HOME/.gitignore
   rm -rf $APP_HOME/.nvmrc
   rm -rf $APP_HOME/.prettierrc
